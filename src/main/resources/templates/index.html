@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>모닥불즈</title>
+  <link rel="stylesheet" href="" th:href="@{/css/common.css}">
+</head>
+<body>
+<!-- 탑 메뉴 -->
+<div th:replace="~{fragments/topmenu :: beforeLoginTop}"></div>
+<div th:replace="~{fragments/topmenu :: afterLoginTop}"></div>
+
+<!-- 헤더 영역 -->
+<div th:replace="~{fragments/topmenu :: header}"></div>
+
+<!-- 메인 페이지 -->
+<div class="main-container">
+
+  <!-- 상단 -->
+  <div class="top-area">
+
+    <!-- 검색 + 커뮤니티 -->
+    <div class="left-area">
+      <section class="search-area">
+        <h2>캠핑장 & 글램핑장 검색</h2>
+        <form th:action="@{/camping/search}" method="get">
+          <div class="search-box">
+            <div class="form-fields">
+              <div class="form-row">
+                <label>키워드</label>
+                <input type="text" name="keyword" />
+              </div>
+              <div class="form-row">
+                <label>지역</label>
+                <input type="text" name="region" />
+              </div>
+              <div class="form-row">
+                <label>테마</label>
+                <input type="text" name="theme" />
+              </div>
+            </div>
+
+            <button type="submit" class="search-btn"></button>
+          </div>
+        </form>
+<!--        <div class="tags" th:if="${hashtags != null and not #lists.isEmpty(hashtags)}">-->
+<!--          <a th:each="tag : ${hashtags}"-->
+<!--             th:href="@{/camping/search(theme=${tag})}"-->
+<!--             th:text="'#' + ${tag}"-->
+<!--             class="tag-link"></a>-->
+<!--        </div>-->
+        <div class="tags">
+          <a th:href="@{/camping/search(theme='여름물놀이')}" class="tag-link">#여름물놀이</a>
+          <a th:href="@{/camping/search(theme='가을단풍명소')}" class="tag-link">#가을단풍명소</a>
+          <a th:href="@{/camping/search(theme='걷기길')}" class="tag-link">#걷기길</a>
+          <a th:href="@{/camping/search(theme='봄꽃여행')}" class="tag-link">#봄꽃여행</a>
+          <a th:href="@{/camping/search(theme='낚시')}" class="tag-link">#낚시</a>
+          <a th:href="@{/camping/search(theme='겨울눈꽃명소')}" class="tag-link">#겨울눈꽃명소</a>
+          <a th:href="@{/camping/search(theme='일몰명소')}" class="tag-link">#일몰명소</a>
+          <a th:href="@{/camping/search(theme='수상레저')}" class="tag-link">#수상레저</a>
+          <a th:href="@{/camping/search(theme='액티비티')}" class="tag-link">#액티비티</a>
+          <a th:href="@{/camping/search(theme='일출명소')}" class="tag-link">#일출명소</a>
+          <a th:href="@{/camping/search(theme='스키')}" class="tag-link">#스키</a>
+          <a th:href="@{/camping/search(theme='항공레저')}" class="tag-link">#항공레저</a>
+        </div>
+      </section>
+    </div>
+
+    <div class="community box">
+      <h3>
+        커뮤니티
+        <a class="more" href="/posts/community">더보기</a>
+      </h3>
+      <ul class="community-list">
+        <li th:each="post : ${recentPosts}">
+          <a th:href="@{/posts/community/{id}(id=${post.coId})}" th:text="${post.title}">글 제목</a>
+          <span class="post-meta">
+            <span class="post-writer" th:text="${post.writer}">작성자</span> |
+            <span class="post-date" th:text="${#temporals.format(post.createdAt, 'MM-dd')}">07-02</span> |
+            <span class="post-views">조회수 <span th:text="${post.viewC}">0</span></span>
+          </span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 하단 추천 캠핑장 -->
+
+  <section class="recommend box">
+    <h3>
+      추천 캠핑장
+      <a th:href="@{/camping}" class="more">더보기</a>
+    </h3>
+    <div class="recommend-scroll">
+      <div class="recommend-camps" th:if="${recommendCamps}">
+        <div class="camp" th:each="camp : ${recommendCamps}">
+          <img th:src="${camp.firstImageUrl != null && !camp.firstImageUrl.isEmpty()
+            ? camp.firstImageUrl
+            : '/images/임시사진.png'}"
+               alt="캠핑장 이미지">
+          <div class="camp-name" th:text="${camp.facltNm}">캠핑장 이름</div>
+          <p th:text="${camp.lineIntro}"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+</body>
+</html>

@@ -1,0 +1,213 @@
+/* 검색 영역 */
+.search-form {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    background-color: #6a794f;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+}
+
+.search-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    flex-grow: 1;
+}
+.search-fields label {
+    font-weight: 600;
+    color: #fff;
+    padding: 10px;
+    margin-bottom: 5px;
+}
+.search-fields input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-family: 'Paperlogy', sans-serif;
+}
+
+.search-button {
+    margin-left: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.search-button button {
+    background-color: #A4B465;
+    color:#fff;
+    border: none;
+    border-radius: 10px;
+    padding: 40px 20px;
+    font-size: 1.1rem;
+    cursor: pointer;
+
+}
+
+/* 캠핑장 목록 */
+.camping-list-container {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 20px;
+
+}
+.camping-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 1000px;
+}
+.camp-card {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    position: relative; /* 자식 요소의 absolute 포지셔닝을 위해 추가 */
+}
+.camp-card a {
+    text-decoration: none;
+}
+
+.camp-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+.camp-card-body {
+    padding: 15px;
+}
+.camp-card-title {
+    color: #000;
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin: 5px;
+}
+.camp-card-text {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 10px;
+}
+.camp-card-intro {
+    background-color: #6a794f;
+    color: #fff;
+    font-size: 0.75rem;
+    border-radius: 999px;
+    padding: 6px 12px;
+    margin-top: 8px;
+    /* 말줄임표 핵심 설정 */
+    white-space: nowrap;          /* 한 줄로 고정 */
+    overflow: hidden;             /* 넘치는 내용 숨기기 */
+    text-overflow: ellipsis;      /* 말줄임표 적용 */
+    max-width: 100%;              /* 또는 원하는 너비 지정 */
+    display: inline-block;        /* 또는 inline-block, flex도 가능 */
+    box-sizing: border-box;
+}
+.camp-card-link {
+    display: inline-block;
+    font-size: 0.9rem;
+    color: #007bff;
+    text-decoration: none;
+}
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 40px;
+}
+.pagination a, .pagination span {
+    margin: 0 5px;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    text-decoration: none;
+    color: #333;
+}
+.pagination .active {
+    font-weight: bold;
+    background-color: #6a794f;
+    color: white;
+    border-color: #6a794f;
+}
+.pagination .disabled {
+    color: #ccc;
+    pointer-events: none;
+}
+.scrap-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    background-color: rgba(0,0,0,0.5);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.scrap-btn.scrapped {
+    background-color: #ffc107;
+    color: white;
+}
+
+    /* 상세 페이지 */
+.detail-container {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 30px;
+    background-color: #fff;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.detail-header h1 {
+    font-size: 2.2rem;
+    margin-bottom: 10px;
+}
+.detail-header p {
+    font-size: 1.1rem;
+    color: #777;
+    margin-top: 0;
+}
+.detail-main-image {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 30px;
+}
+.info-box {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+}
+.info-box h3 {
+    margin-top: 0;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+.info-box ul {
+    list-style: none;
+    padding: 0;
+}
+.info-box li {
+    margin-bottom: 8px;
+    color: #555;
+}
+.info-box li strong {
+    color: #333;
+    min-width: 80px;
+    display: inline-block;
+}

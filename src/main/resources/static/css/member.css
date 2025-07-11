@@ -1,0 +1,109 @@
+@font-face {
+    font-family:'Paperlogy';
+    src: url(/fonts/paperlogy-5Medium.ttf) format('truetype');
+    font-weight: 500;
+    font-style: nomal;
+}
+
+body {
+    background-color: #f5ecd5;
+    font-family: 'Paperlogy';
+    font-weight: 500;
+    font-size: 16px;
+    margin: 0;
+    padding: 0;
+    color: #333;
+}
+
+.login-logo {
+    width: 100px;
+    height: auto;
+    margin-bottom: 15px;
+}
+
+.join-container {
+    max-width: 500px;
+    margin: 50px auto;
+    background-color: #fff;
+    border-radius: 15px;
+    padding: 40px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.join-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+.join-form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.join-form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #333;
+}
+
+.join-form-group input,
+.join-form-group select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 0.95rem;
+    box-sizing: border-box;
+}
+
+.field-err {
+    color: red;
+    font-size: 0.8rem;
+    margin-top: 5px;
+}
+
+.global-err {
+    color: red;
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+}
+
+select {
+  font-family: 'Paperlogy';
+  font-size: 1rem;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  width: 100%;
+  text-align: center;
+  appearance: none;
+}
+
+option {
+  font-family: 'Paperlogy';
+  text-align: center;
+}
+
+.button-group {
+     display: flex;
+     justify-content: center;
+     gap: 10px;
+     margin-top: 20px;
+}
+
+.join-button {
+    flex: 1;
+    padding: 10px;
+    background-color: #626F47;
+    color: #fff;
+    font-weight: 600;
+    font-family: 'Paperlogy';
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
