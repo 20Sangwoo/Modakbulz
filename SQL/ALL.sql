@@ -1,4 +1,24 @@
 -- 모닥불스 DB 설계 --
+-- 모든 테이블 및 시퀀스 초기화를 위한 DROP 문 (개발 초기 단계에서 유용)
+DROP TABLE FILES CASCADE CONSTRAINTS;
+DROP TABLE SCRAP CASCADE CONSTRAINTS;
+DROP TABLE FAQ_COMMENT CASCADE CONSTRAINTS;
+DROP TABLE FAQ CASCADE CONSTRAINTS;
+DROP TABLE CO_COMMENT CASCADE CONSTRAINTS;
+DROP TABLE COMMUNITY CASCADE CONSTRAINTS;
+DROP TABLE REVIEW CASCADE CONSTRAINTS;
+DROP TABLE CAMPSITES CASCADE CONSTRAINTS;
+DROP TABLE CAMPING_INFO CASCADE CONSTRAINTS;
+DROP TABLE MEMBER CASCADE CONSTRAINTS;
+
+DROP SEQUENCE member_member_id_seq;
+DROP SEQUENCE review_rev_id_seq;
+DROP SEQUENCE member_co_id_seq;
+DROP SEQUENCE co_comment_seq;
+DROP SEQUENCE camp_faq_id_seq;
+DROP SEQUENCE faq_comment_seq;
+DROP SEQUENCE camp_scrap_id_seq;
+DROP SEQUENCE FILES_SEQ;
 -- 1. 회원 정보 DB --------------------------------------------------------------------------
 
 -- 회원 정보 DB 삭제(기존) - 외래키 묶인것들 무시하고 강제 삭제문 추가
@@ -67,7 +87,7 @@ CHECK (
 
 
 SELECT * FROM MEMBER;
-
+SELECT email, pwd FROM member WHERE email = 'pbtakcm@gmail.com';
 -------------------------------------------------------------------------------------------
 -- 2. 캠핑장 정보 저장 DB ---------------------------------------------------------------------
 
@@ -90,7 +110,7 @@ CREATE TABLE CAMPING_INFO (
     hvofBgnde          DATE,
     hvofEnddle         DATE,
     featureNm          VARCHAR2(2000),
-    induty             VARCHAR2(100) DEFAULT '일반야영장',
+    induty             VARCHAR2(200) DEFAULT '일반야영장',
     lctCl              VARCHAR2(100),
     doNm               VARCHAR2(50),
     sigunguNm          VARCHAR2(50),
@@ -136,34 +156,8 @@ CREATE TABLE CAMPSITES (
     SC_C        NUMBER DEFAULT 0 NOT NULL,
     VIEW_C      NUMBER DEFAULT 0 NOT NULL,
     SCORE       NUMBER DEFAULT 0 NOT NULL
-                CHECK (SCORE BETWEEN 1 AND 5)
+                CHECK (SCORE BETWEEN 0 AND 5)
 );
-
-CREATE OR REPLACE TRIGGER trg_update_campsite_score
-AFTER INSERT OR UPDATE OR DELETE ON REVIEW
-FOR EACH ROW
-DECLARE
-    v_avg_score NUMBER;
-    v_contentid REVIEW.CONTENTID%TYPE;
-BEGIN
-
-    IF INSERTING OR UPDATING THEN
-        v_contentid := :NEW.CONTENTID;
-    ELSIF DELETING THEN
-        v_contentid := :OLD.CONTENTID;
-    END IF;
-
-    -- 평균 평점 재계산
-    SELECT ROUND(AVG(SCORE), 1)
-    INTO v_avg_score
-    FROM REVIEW
-    WHERE CONTENTID = v_contentid;
-
-    -- CAMPSITES 테이블의 SCORE 업데이트
-    UPDATE CAMPSITES
-    SET SCORE = NVL(v_avg_score, 0)
-    WHERE CONTENTID = v_contentid;
-END;
 
 SELECT * FROM CAMPSITES;
 -------------------------------------------------------------------------------------------
@@ -186,7 +180,7 @@ CREATE TABLE REVIEW (
     CREATED_AT   TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
     UPDATED_AT   TIMESTAMP,
     SCORE        NUMBER(10) DEFAULT 0 NOT NULL
-                 CHECK (SCORE BETWEEN 1 AND 5)
+                 CHECK (SCORE BETWEEN 1 AND 5),
 );
 
 CREATE SEQUENCE review_rev_id_seq
@@ -384,3 +378,27 @@ CREATE SEQUENCE FILES_SEQ
     NOCACHE
     NOCYCLE;
 -------------------------------------------------------------------------------------------
+-- 11. 지도 정보 DB--------------------------------------------------------------------------
+CREATE TABLE CAMP_LOCATION (
+    location_id   NUMBER(10) PRIMARY KEY,
+    contentId     NUMBER(10) NOT NULL REFERENCES CAMPING_INFO(contentId) ON DELETE CASCADE,
+    mapY          VARCHAR2(30),
+    mapX          VARCHAR2(30),
+    address       VARCHAR2(255)
+);
+SELECT * FROM camp_location;
+-------------------------------------------------------------------------------------------
+-- 12. 키워드 정보 DB------------------------------------------------------------------------
+CREATE TABLE KEYWORD (
+    KEYWORD_ID NUMBER(10) PRIMARY KEY,
+    WORDS      VARCHAR2(255) UNIQUE NOT NULL
+);
+
+CREATE SEQUENCE keyword_seq START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+-------------------------------------------------------------------------------------------
+-- 13. 리뷰 키워드 정보 DB--------------------------------------------------------------------
+CREATE TABLE REVIEW_KEYWORD (
+    REV_ID     NUMBER(10) NOT NULL REFERENCES REVIEW(REV_ID) ON DELETE CASCADE,
+    KEYWORD_ID NUMBER(10) NOT NULL REFERENCES KEYWORD(KEYWORD_ID) ON DELETE CASCADE,
+    PRIMARY KEY (REV_ID, KEYWORD_ID)
+    );

@@ -4,18 +4,25 @@ import lombok.RequiredArgsConstructor;
 import modackbulz.app.Application.domain.camping.dao.CampingDAO;
 import modackbulz.app.Application.domain.camping.dto.GoCampingDto;
 import modackbulz.app.Application.domain.camping.svc.GoCampingService;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+import modackbulz.app.Application.domain.review.svc.ReviewSVC;
+import modackbulz.app.Application.entity.Review;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
+import java.security.MessageDigest;
+import org.apache.commons.codec.binary.Hex;
+import org.springframework.web.client.RestTemplate;
 
 @Controller
 @RequiredArgsConstructor
@@ -24,25 +31,23 @@ public class CampingController {
 
   private final GoCampingService goCampingService;
   private final CampingDAO campingDAO;
+  private final ReviewSVC reviewSVC;
 
   /**
-   * 전체 캠핑장 목록 (수정됨)
-   * 1. API를 호출하여 최신 데이터를 DB에 저장/업데이트합니다.
-   * 2. DB에서 페이징 처리된 데이터를 가져와 화면에 보여줍니다.
+   * 전체 캠핑장 목록 (수정됨: DB 우선 조회)
+   * 1. DB에서 데이터를 먼저 조회합니다.
+   * 2. DB에 데이터가 없으면 API를 호출하여 DB에 저장합니다.
    */
   @GetMapping
   public String campList(@PageableDefault(size = 9, sort = "facltNm") Pageable pageable, Model model) {
-    // 1. 서비스를 호출하고, 서비스가 반환한 Page 객체를 직접 사용합니다.
-    // getCampListPage 메서드는 API 호출, DB 저장, Page 객체 생성을 모두 책임집니다.
-    Page<GoCampingDto.Item> campPage = goCampingService.getCampListPage(pageable).block();
-
-    // 2. 서비스로부터 받은 Page 객체를 모델에 추가합니다. (DB 재조회 로직 삭제)
+    // DB 우선 조회 로직이 이미 GoCampingService에 구현되어 있음
+    Page<GoCampingDto.Item> campPage = goCampingService.getCampListPageWithImageFallback(pageable).block();
     model.addAttribute("campPage", campPage);
     return "camping/list";
   }
 
   /**
-   * 캠핑장 검색 (수정됨)
+   * 캠핑장 검색 (수정됨: DB 우선 조회)
    */
   @GetMapping("/search")
   public String searchCamps(
@@ -61,13 +66,11 @@ public class CampingController {
     Page<GoCampingDto.Item> campPage;
 
     if (finalKeyword.isBlank()) {
-      // 키워드가 없으면 전체 목록 조회
-      goCampingService.getCampListPage(pageable).block();
-      campPage = campingDAO.findAll(pageable);
+      // 키워드가 없으면 전체 목록 조회 (DB 우선 조회 로직 사용)
+      campPage = goCampingService.getCampListPage(pageable).block();
     } else {
-      // 키워드가 있으면 검색 API 호출로 DB 업데이트 후, DB에서 검색
-      goCampingService.searchCampList(finalKeyword, pageable).block();
-      campPage = campingDAO.search(finalKeyword, pageable);
+      // 키워드가 있으면 검색 (DB 우선 조회 로직 사용)
+      campPage = goCampingService.searchCampList(finalKeyword, pageable).block();
     }
 
     model.addAttribute("campPage", campPage);
@@ -79,24 +82,133 @@ public class CampingController {
   }
 
   /**
-   * 캠핑장 상세 정보 (DB 우선 조회)
+   * 캠핑장 상세 정보 (수정됨: DB 우선 조회)
    */
   @GetMapping("/{contentId}")
   public String campDetail(@PathVariable("contentId") Long contentId, Model model) {
-    // DB에서 먼저 조회를 시도합니다.
-    Optional<GoCampingDto.Item> campOptional = campingDAO.findByContentId(contentId);
+    // DB 우선 조회 로직이 이미 GoCampingService에 구현되어 있음
+    GoCampingDto.Item camp = goCampingService.getCampDetail(contentId).block();
 
-    if (campOptional.isPresent()) {
-      // DB에 정보가 있으면 바로 모델에 담습니다.
-      model.addAttribute("camp", campOptional.get());
-    } else {
-      // DB에 정보가 없으면 API를 호출하여 조회하고 DB에 저장합니다.
-      GoCampingDto.Item itemFromApi = goCampingService.getCampDetail(contentId).block();
-      if(itemFromApi != null) {
-        campingDAO.saveOrUpdate(itemFromApi);
+    // 캠핑장 정보를 모델에 추가
+    model.addAttribute("camp", camp);
+
+    // 해당 캠핑장의 리뷰 목록을 조회하여 모델에 추가
+    List<Review> reviews = reviewSVC.findByContentId(contentId);
+    model.addAttribute("reviews", reviews);
+
+    // 해당 캠핑장의 리뷰 목록을 조회하여 모델에 추가
+    List<Review> review = reviewSVC.findByContentId(contentId);
+    model.addAttribute("reviews", reviews);
+
+    // 리뷰 통계 정보 추가 (평점 + 개수)
+    Double avgRating = reviewSVC.calculateAverageScore(contentId);
+    Map<Integer, Long> distribution = reviewSVC.calculateScoreDistribution(contentId);
+
+    Map<String, Object> reviewStats = new HashMap<>();
+    reviewStats.put("avg", avgRating != null ? avgRating : 0.0);
+    reviewStats.put("distribution", distribution);
+    reviewStats.put("count", reviews.size());
+    reviewStats.put("keywords", List.of());
+
+    model.addAttribute("reviewStats", reviewStats);
+
+    // 캠핑장 이미지 목록을 API에서 조회하여 모델에 추가
+    if (camp != null) {
+      List<String> campImages = goCampingService.getCampImages(contentId).block();
+
+      // 대표 이미지와 campImages 내 중복 제거 (소문자, trim 처리)
+      if (campImages != null && camp.getFirstImageUrl() != null && !camp.getFirstImageUrl().isEmpty()) {
+        String firstImageUrl = camp.getFirstImageUrl().trim().toLowerCase();
+        campImages = campImages.stream()
+            .filter(url -> url != null && !url.trim().isEmpty())
+            .map(url -> url.trim())
+            .filter(url -> !url.equalsIgnoreCase(firstImageUrl))
+            .distinct()
+            .collect(Collectors.toList());
+      } else if (campImages != null) {
+        campImages = campImages.stream()
+            .filter(url -> url != null && !url.trim().isEmpty())
+            .map(url -> url.trim())
+            .distinct()
+            .collect(Collectors.toList());
       }
-      model.addAttribute("camp", itemFromApi);
+      // 실제 이미지 중복 제거
+      if (campImages != null && !campImages.isEmpty()) {
+        campImages = removeDuplicateImagesByContent(campImages);
+      }
+      model.addAttribute("campImages", campImages != null ? campImages : Collections.emptyList());
+    } else {
+      model.addAttribute("campImages", Collections.emptyList());
     }
+
     return "camping/detail";
+  }
+
+  /**
+   * 캠핑장 갤러리 전체보기
+   */
+  @GetMapping("/gallery")
+  public String gallery(@RequestParam("campingId") Long campingId, Model model) {
+    // 캠핑장 상세 정보 조회
+    GoCampingDto.Item camp = goCampingService.getCampDetail(campingId).block();
+    model.addAttribute("camp", camp);
+
+    // 캠핑장 이미지 목록 조회
+    List<String> campImages = goCampingService.getCampImages(campingId).block();
+    // 대표 이미지와 campImages 내 중복 제거 (소문자, trim 처리)
+    if (campImages != null && camp != null && camp.getFirstImageUrl() != null && !camp.getFirstImageUrl().isEmpty()) {
+      String firstImageUrl = camp.getFirstImageUrl().trim().toLowerCase();
+      campImages = campImages.stream()
+          .filter(url -> url != null && !url.trim().isEmpty())
+          .map(url -> url.trim())
+          .filter(url -> !url.equalsIgnoreCase(firstImageUrl))
+          .distinct()
+          .collect(Collectors.toList());
+    } else if (campImages != null) {
+      campImages = campImages.stream()
+          .filter(url -> url != null && !url.trim().isEmpty())
+          .map(url -> url.trim())
+          .distinct()
+          .collect(Collectors.toList());
+    }
+    // 실제 이미지 중복 제거
+    if (campImages != null && !campImages.isEmpty()) {
+      campImages = removeDuplicateImagesByContent(campImages);
+    }
+    model.addAttribute("campImages", campImages != null ? campImages : Collections.emptyList());
+    return "camping/gallery";
+  }
+
+  // campImages에서 실제 이미지 중복 제거 (MD5 해시)
+  private List<String> removeDuplicateImagesByContent(List<String> imageUrls) {
+    Set<Object> hashSet = new HashSet<>();
+    List<String> result = new ArrayList<>();
+    RestTemplate restTemplate = new RestTemplate();
+
+    for (String url : imageUrls) {
+      try {
+        byte[] imageBytes = restTemplate.getForObject(url, byte[].class);
+        if (imageBytes == null) continue;
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        String hash = Hex.encodeHexString(md.digest(imageBytes));
+        if (hashSet.add(hash)) {
+          result.add(url);
+        }
+      } catch (Exception e) {
+        // 실패한 이미지는 무시
+      }
+    }
+    return result;
+  }
+
+  /**
+   * [추가] 메인 페이지 추천 캠핑장 목록을 비동기로 제공하는 API
+   */
+  @GetMapping("/recommendations")
+  @ResponseBody // HTML 뷰가 아닌 JSON 데이터를 직접 반환하도록 설정
+  public ResponseEntity<List<GoCampingDto.Item>> getRecommendations() {
+    Pageable pageable = PageRequest.of(0, 8); // 8개 항목 조회
+    List<GoCampingDto.Item> campList = goCampingService.getCampListPageWithImageFallback(pageable).block().getContent();
+    return ResponseEntity.ok(campList); // 조회된 데이터를 JSON 형태로 반환
   }
 }
